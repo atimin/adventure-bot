@@ -1,0 +1,33 @@
+SET(CMAKE_SYSTEM_NAME Generic)
+
+SET(CMAKE_C_COMPILER avr-gcc)
+SET(CMAKE_CXX_COMPILER avr-g++)
+
+SET(CSTANDARD "-std=gnu99")
+SET(CDEBUG "-gstabs")
+#SET(CWARN "-Wall -Wstrict-prototypes")
+SET(CTUNING "-funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums")
+
+SET(COPT "-Os")
+SET(CMCU "-mmcu=atmega168")
+SET(CDEFS "-DF_CPU=16000000UL")
+
+SET(CFLAGS "${CMCU} ${CDEBUG} ${CDEFS} ${CINCS} ${COPT} ${CWARN} ${CSTANDARD} ${CEXTRA}")
+SET(CXXFLAGS "${CMCU} ${CDEFS} ${CINCS} ${COPT}")
+SET(CMAKE_C_FLAGS  ${CFLAGS})
+SET(CMAKE_CXX_FLAGS ${CXXFLAGS})
+
+SET(HEX_PATH ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.hex)
+
+
+MACRO(AVR_CREATE_HEX)
+  ADD_CUSTOM_COMMAND(TARGET ${PROJECT_NAME} POST_BUILD COMMAND avr-objcopy ARGS -O ihex -R.eeprom ${PROJECT_NAME} ${HEX_PATH})
+ENDMACRO(AVR_CREATE_HEX)
+
+MACRO(AVR_UPLOAD prog chip port)
+  ADD_CUSTOM_TARGET(upload 
+    avrdude -c${prog} -P${port} -p${chip} -b19200 -D -V -Uflash:w:${HEX_PATH}
+  )
+ENDMACRO(AVR_UPLOAD)
+
+
