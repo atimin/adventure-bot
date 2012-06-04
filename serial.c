@@ -64,6 +64,7 @@ serial_t* serial_create()
 /* Free serial port object. */
 void serial_destroy(serial_t *sp)
 {
+  free(sp->rx_buff);
   free(sp);
 }
 
@@ -154,13 +155,12 @@ int8_t serial_recv(serial_t *sp)
     uint8_t d = 0;
 
     tuned_delay(sp->delay_rxcenter);
-
     debug_write(sp, 1);
 
     /* Read each of the 8 bits */
     for (uint8_t mask=0x1; mask; mask <<= 1) {
       tuned_delay(sp->delay_rxintra);
-      if (rx_read(sp)) 
+      if (rx_read(sp))
         d |= mask;
       else
         d &= ~mask;
@@ -171,7 +171,7 @@ int8_t serial_recv(serial_t *sp)
 
     /* Save byte in buffer */
     if (sp->rx_index < MAX_RX_BUFF_SIZE) {
-      sp->rx_buff[sp->rx_index] = d;
+      sp->rx_buff[sp->rx_index] = d; 
       sp->rx_index++;
     }
     else {
@@ -224,5 +224,31 @@ int8_t serial_write_bytes(serial_t *sp, uint8_t *buff, uint8_t size)
 /* Write string to serial port */
 int8_t serial_print(serial_t *sp, const char *msg)
 {
-  return serial_write_bytes(sp, msg, strlen(msg));
+  return serial_write_bytes(sp, (uint8_t*)msg, strlen(msg));
+}
+
+/* Read bytes from serial port */
+int8_t serial_read_bytes(serial_t *sp, uint8_t *buff, uint8_t size)
+{
+  uint8_t rx_buff_size = sp->rx_index;
+  if (rx_buff_size == 0)
+    return 0;
+
+  /* We cannot read bytes more that rx_buffer consists */
+  if (size >= sp->rx_index) {
+    size = rx_buff_size;
+  }
+
+  /* copy data user's buffer*/
+  memcpy(buff, sp->rx_buff, size * sizeof(uint8_t));
+
+  /* shift rx_buffer */
+  sp->rx_index = sp->rx_index - size;
+  if (sp->rx_index > 0) {
+    for (int i = size; i <= rx_buff_size; i++) {
+      sp->rx_buff[i - size] = sp->rx_buff[i];
+    }
+  }
+
+  return size;
 }

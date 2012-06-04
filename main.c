@@ -24,7 +24,7 @@ void init()
   
   /* Init software serial port */
   sp = serial_create();
-  serial_config(sp, BAUD_9600, &PORTB, RX, &PORTD, TX);
+  serial_config(sp, BAUD_9600, &PINB, RX, &PORTD, TX);
   serial_debug(sp, &PORTD, RF_LED);
 }
 
@@ -33,6 +33,9 @@ int main()
   init();
   for(;;) {
     for(int i=0; i < 80; ++i,  _delay_loop_2(50000));
-    serial_print(sp, "Hello, World!!!\n");
+      uint8_t recive[5];
+      int c = serial_read_bytes(sp, recive, 5);
+      if (c > 0 )
+        serial_write_bytes(sp, recive, c);
   }
-}
+} 
