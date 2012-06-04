@@ -1,3 +1,9 @@
+/*
+ * Software serial port module for AVR microcontrollers
+ * 2012 Aleksey Timin
+ *
+ * Public Domain
+ * */
 #include "serial.h"
 #include <avr/pgmspace.h>
 #include <stdlib.h>

@@ -1,3 +1,9 @@
+/*
+ * Software serial port module for AVR microcontrollers
+ * 2012 Aleksey Timin
+ *
+ * Public Domain
+ * */
 #ifndef SERIAL_H
 #define SERIAL_H
 
