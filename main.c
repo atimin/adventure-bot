@@ -1,4 +1,5 @@
 #include "bot.h"
+
 #include "serial.h"
 
 #include <avr/io.h>
@@ -25,7 +26,7 @@ void init()
   /* Init software serial port */
   sp = serial_create();
   serial_config(sp, BAUD_9600, &PINB, RX, &PORTD, TX);
-  serial_debug(sp, &PORTD, RF_LED);
+  serial_debug(sp, &PORTD, RF_LED, &PORTB, LF_LED);
 }
 
 int main()

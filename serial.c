@@ -74,7 +74,6 @@ int8_t serial_config(serial_t *sp, baud_t baudrate,
 {
   uint8_t result = 1;
 
-  sp->debug = 0;
   sp->rx_index = 0;
 
   sp->rx_port = rx_port;
@@ -88,31 +87,53 @@ int8_t serial_config(serial_t *sp, baud_t baudrate,
   sp->delay_rxstop = pgm_read_word(&table[baudrate][3]);
   sp->delay_tx = pgm_read_word(&table[baudrate][4]);
 
+  sp->state = SP_INIT;
+
   return result;
 }
 
-/* Turn on debug mode. */
-int8_t serial_debug(serial_t *sp, volatile uint8_t *debug_port, uint8_t debug_pin)
+#ifdef SERIAL_DEBUG
+/* Setup debug mode. */
+int8_t serial_debug(serial_t *sp, 
+    volatile uint8_t *rx_db_port, uint8_t rx_db_pin,
+    volatile uint8_t *tx_db_port, uint8_t tx_db_pin)
 {
-  sp->debug = 1;
-  sp->debug_port = debug_port;
-  sp->debug_pin = debug_pin;
+  sp->rx_db_port = rx_db_port;
+  sp->rx_db_pin = rx_db_pin;
+  sp->tx_db_port = tx_db_port;
+  sp->tx_db_pin = tx_db_pin;
 
+  sp->state |= SP_DEBUG;
   return 1;
 }
 
-/* Write to debug pin */
-void debug_write(serial_t *sp, uint8_t state)
+/* Write to debug rx pin */
+void debug_rx_write(serial_t *sp, uint8_t state)
 {
-  if (sp->debug) {
+  if (sp->state & SP_DEBUG) {
     if (state) {
-      *(sp->debug_port) |= (1 << sp->debug_pin);
+      *(sp->rx_db_port) |= (1 << sp->rx_db_pin);
     }
     else {
-      *(sp->debug_port) &= ~(1 << sp->debug_pin);
+      *(sp->rx_db_port) &= ~(1 << sp->rx_db_pin);
     }
   }
 }
+
+/* Write to debug tx pin */
+void debug_tx_write(serial_t *sp, uint8_t state)
+{
+  if (sp->state & SP_DEBUG) {
+    if (state) {
+      *(sp->tx_db_port) |= (1 << sp->tx_db_pin);
+    }
+    else {
+      *(sp->tx_db_port) &= ~(1 << sp->tx_db_pin);
+    }
+  }
+}
+
+#endif
 
 /* Read state of rx pin */
 uint8_t rx_read(serial_t *sp)
@@ -155,7 +176,10 @@ int8_t serial_recv(serial_t *sp)
     uint8_t d = 0;
 
     tuned_delay(sp->delay_rxcenter);
-    debug_write(sp, 1);
+
+#ifdef SERIAL_DEBUG
+    debug_rx_write(sp, 1);
+#endif
 
     /* Read each of the 8 bits */
     for (uint8_t mask=0x1; mask; mask <<= 1) {
@@ -166,16 +190,25 @@ int8_t serial_recv(serial_t *sp)
         d &= ~mask;
     }
 
-    debug_write(sp, 0);
+#ifdef SERIAL_DEBUG
+    debug_rx_write(sp, 0);
+#endif
+
     tuned_delay(sp->delay_rxstop);
 
+    sp->state &= ~SP_EMPTY;
     /* Save byte in buffer */
     if (sp->rx_index < MAX_RX_BUFF_SIZE) {
       sp->rx_buff[sp->rx_index] = d; 
       sp->rx_index++;
+      result = 1;
     }
     else {
-      debug_write(sp, 1);
+
+#ifdef SERIAL_DEBUG
+      debug_rx_write(sp, 1);
+#endif
+      sp->state |= SP_OVERFLOW;
     }
 
   }
@@ -198,13 +231,20 @@ void serial_write(serial_t *sp, uint8_t byte)
   tx_write(sp, 0);
   tuned_delay(sp->delay_tx + XMIT_START_ADJUSTMENT);
 
-  debug_write(sp, 1);
+
+#ifdef SERIAL_DEBUG
+  debug_tx_write(sp, 1);
+#endif
+
   /* Send each bits */
   for (uint8_t mask = 0x01; mask; mask <<= 1) {
     tx_write(sp, mask & byte);
     tuned_delay(sp->delay_tx);
   }
-  debug_write(sp, 0);
+
+#ifdef SERIAL_DEBUG
+  debug_tx_write(sp, 0);
+#endif
 
   tx_write(sp, 1);
   tuned_delay(sp->delay_tx);
@@ -248,6 +288,8 @@ int8_t serial_read_bytes(serial_t *sp, uint8_t *buff, uint8_t size)
     for (int i = size; i <= rx_buff_size; i++) {
       sp->rx_buff[i - size] = sp->rx_buff[i];
     }
+  } else {
+    sp->state != SP_EMPTY;
   }
 
   return size;
@@ -263,6 +305,12 @@ int8_t serial_available(serial_t *sp)
 void serial_flush(serial_t *sp)
 {
   sp->rx_index = 0;
+}
+
+/* Get port's state */
+uint8_t serial_state(serial_t *sp)
+{
+  return sp->state;
 }
 
 

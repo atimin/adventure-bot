@@ -9,7 +9,15 @@
 
 #include <inttypes.h>
 
+#define SERIAL_DEBUG 
 #define MAX_RX_BUFF_SIZE 50
+
+/* State flags */
+#define SP_INIT       0x01
+#define SP_DEBUG      0x02
+#define SP_OVERFLOW   0x04
+#define SP_EMPTY      0x08
+
 
 /* Supported speeds. */
 typedef enum {
@@ -30,6 +38,7 @@ typedef enum {
 typedef struct 
 {
   uint16_t baudrate;
+  uint8_t  state;
 
   uint8_t  rx_index;
   uint8_t  rx_buff[MAX_RX_BUFF_SIZE];
@@ -44,9 +53,13 @@ typedef struct
   volatile uint8_t  *tx_port;
   uint8_t  tx_pin;
 
-  uint8_t  debug;
-  volatile uint8_t  *debug_port;
-  uint8_t  debug_pin;
+#ifdef SERIAL_DEBUG
+  volatile uint8_t  *rx_db_port;
+  uint8_t  rx_db_pin;
+  volatile uint8_t  *tx_db_port;
+  uint8_t  tx_db_pin;
+#endif
+
 } serial_t;
 
 /* Allocate memory for serial port. */
@@ -67,13 +80,19 @@ extern void serial_destroy(serial_t *sp);
 extern int8_t serial_config(serial_t *sp, baud_t baudrate, 
     volatile uint8_t *rx_port, uint8_t rx_pin, volatile uint8_t *tx_port, uint8_t tx_pin);
 
-/* Turn on debug mode.
+#ifdef SERIAL_DEBUG
+/* Setup debug pins.
  *
  * @param *sp a serial port.
- * @param *tx_port an address of DEBUG port.
- * @param tx_pin a number of DEBUG pin. 
+ * @param *rx_db_port an address of DEBUG RX port.
+ * @param rx_db_pin a number of DEBUG RX pin. 
+ * @param *tx_db_port an address of DEBUG TX port.
+ * @param tx_db_pin a number of DEBUG TX pin. 
  * @return 1 - success, 0 - fault. */
-extern int8_t serial_debug(serial_t *sp, volatile uint8_t *debug_port, uint8_t debug_pin);
+extern int8_t serial_debug(serial_t *sp, 
+    volatile uint8_t *rx_db_port, uint8_t rx_db_pin,
+    volatile uint8_t *tx_db_port, uint8_t tx_db_pin);
+#endif
 
 /* Handle to receive byte by port. Usually it uses in interrupts.
  * @param *sp a serial port.
@@ -108,4 +127,9 @@ extern int8_t serial_available(serial_t *sp);
 /* Flush port.
  * @param *sp a serial port. */
 extern void serial_flush(serial_t *sp);
+
+/* Get port's state. 
+ * @param *sp a serial port. 
+ * @return a byte of state */
+extern uint8_t serial_state(serial_t *sp);
 #endif
