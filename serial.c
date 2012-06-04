@@ -152,7 +152,7 @@ void tx_write(serial_t *sp, uint8_t state)
   }
 }
 
-/* Delay.... I really don't know how it's work =)
+/* Delay.... I really don't know how it's working =)
  * I copied that from SofwareSerial of Arduino. */
 inline void tuned_delay(uint16_t delay) { 
   uint8_t tmp=0;
