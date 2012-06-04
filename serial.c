@@ -2,6 +2,7 @@
 #include <avr/pgmspace.h>
 #include <stdlib.h>
 #include <util/delay_basic.h>
+#include <string.h>
 
 #if F_CPU == 16000000
 
@@ -182,8 +183,7 @@ int8_t serial_handle(serial_t *sp)
   return serial_recv(sp);
 }
 
-
-/* Write array of bytes to serial port */
+/* Write byte to serial port */
 void serial_write(serial_t *sp, uint8_t byte)
 {
   uint8_t save_SREG = SREG;
@@ -206,7 +206,8 @@ void serial_write(serial_t *sp, uint8_t byte)
   SREG = save_SREG;
 }
 
-int8_t serial_write_bytes(serial_t *sp, uint8_t* buff, uint8_t size)
+/* Write array of bytes to serial port */
+int8_t serial_write_bytes(serial_t *sp, uint8_t *buff, uint8_t size)
 {
   for (uint8_t i=0; i < size; ++i) {
     serial_write(sp, buff[i]);
@@ -214,3 +215,8 @@ int8_t serial_write_bytes(serial_t *sp, uint8_t* buff, uint8_t size)
   return 1;
 }
 
+/* Write string to serial port */
+int8_t serial_print(serial_t *sp, const char *msg)
+{
+  return serial_write_bytes(sp, msg, strlen(msg));
+}

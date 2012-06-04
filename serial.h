@@ -80,4 +80,10 @@ extern int8_t serial_handle(serial_t *sp);
  * @param size a size of array.
  * @return 1 - success, 0 - fault. */
 extern int8_t serial_write_bytes(serial_t *sp, uint8_t *buff, uint8_t size);
+
+/* Write string to serial port 
+ * @param *sp a serial port.
+ * @param msg a string for sending.
+ * @return 1 - success, 0 - fault. */
+extern int8_t serial_print(serial_t *sp, const char *msg);
 #endif
