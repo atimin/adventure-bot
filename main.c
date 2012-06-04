@@ -34,8 +34,9 @@ int main()
   for(;;) {
     for(int i=0; i < 80; ++i,  _delay_loop_2(50000));
       uint8_t recive[5];
-      int c = serial_read_bytes(sp, recive, 5);
-      if (c > 0 )
+      if (serial_available(sp) > 0 ) {
+        int c = serial_read_bytes(sp, recive, 5);
         serial_write_bytes(sp, recive, c);
+      }
   }
 } 

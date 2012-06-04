@@ -252,3 +252,10 @@ int8_t serial_read_bytes(serial_t *sp, uint8_t *buff, uint8_t size)
 
   return size;
 }
+
+/* Check number bytes in buffer */
+extern int8_t serial_available(serial_t *sp)
+{
+  return sp->rx_index;
+}
+

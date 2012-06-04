@@ -97,6 +97,11 @@ extern int8_t serial_print(serial_t *sp, const char *msg);
  * @param *sp a serial port.
  * @param *buff a array of byte.
  * @param size a size of array.
- * @return size of read bytes (-1 error) */
+ * @return a size of read bytes (-1 error). */
 extern int8_t serial_read_bytes(serial_t *sp, uint8_t *buff, uint8_t size);
+
+/* Check number bytes in buffer 
+ * @param *sp a serial port.
+ * @return a number bytes. */
+extern int8_t serial_available(serial_t *sp);
 #endif
