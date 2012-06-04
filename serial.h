@@ -87,21 +87,25 @@ extern int8_t serial_handle(serial_t *sp);
  * @return 1 - success, 0 - fault. */
 extern int8_t serial_write_bytes(serial_t *sp, uint8_t *buff, uint8_t size);
 
-/* Write string to serial port 
+/* Write string to serial port.
  * @param *sp a serial port.
  * @param msg a string for sending.
  * @return 1 - success, 0 - fault. */
 extern int8_t serial_print(serial_t *sp, const char *msg);
 
-/* Read bytes from serial port 
+/* Read bytes from serial port.
  * @param *sp a serial port.
  * @param *buff a array of byte.
  * @param size a size of array.
  * @return a size of read bytes (-1 error). */
 extern int8_t serial_read_bytes(serial_t *sp, uint8_t *buff, uint8_t size);
 
-/* Check number bytes in buffer 
+/* Check number bytes in buffer. 
  * @param *sp a serial port.
  * @return a number bytes. */
 extern int8_t serial_available(serial_t *sp);
+
+/* Flush port.
+ * @param *sp a serial port. */
+extern void serial_flush(serial_t *sp);
 #endif
