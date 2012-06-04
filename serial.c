@@ -46,6 +46,7 @@ static const PROGMEM uint16_t table[][5] =
 const int XMIT_START_ADJUSTMENT = 4;
 #endif
 
+/* Allocate memory for serial port. */
 serial_t* serial_create() 
 {
   serial_t* sp = malloc(sizeof *sp);
@@ -53,11 +54,13 @@ serial_t* serial_create()
   return sp;
 }
 
+/* Free serial port object. */
 void serial_destroy(serial_t *sp)
 {
   free(sp);
 }
 
+/* Configurate port. */
 int8_t serial_config(serial_t *sp, baud_t baudrate, 
     volatile uint8_t *rx_port, uint8_t tx_pin, volatile uint8_t *tx_port, uint8_t rx_pin)
 {
@@ -80,6 +83,7 @@ int8_t serial_config(serial_t *sp, baud_t baudrate,
   return result;
 }
 
+/* Turn on debug mode. */
 int8_t serial_debug(serial_t *sp, volatile uint8_t *debug_port, uint8_t debug_pin)
 {
   sp->debug = 1;
@@ -89,6 +93,7 @@ int8_t serial_debug(serial_t *sp, volatile uint8_t *debug_port, uint8_t debug_pi
   return 1;
 }
 
+/* Write to debug pin */
 void debug_write(serial_t *sp, uint8_t state)
 {
   if (sp->debug) {
@@ -101,11 +106,13 @@ void debug_write(serial_t *sp, uint8_t state)
   }
 }
 
+/* Read state of rx pin */
 uint8_t rx_read(serial_t *sp)
 {
   return *(sp->rx_port) & (1 << sp->rx_pin);
 }
 
+/* Write to tx pin */
 void tx_write(serial_t *sp, uint8_t state)
 {
   if (state > 0) {
@@ -116,6 +123,8 @@ void tx_write(serial_t *sp, uint8_t state)
   }
 }
 
+/* Delay.... I really don't know how it's work =)
+ * I copied that from SofwareSerial of Arduino. */
 inline void tuned_delay(uint16_t delay) { 
   uint8_t tmp=0;
 
@@ -129,7 +138,7 @@ inline void tuned_delay(uint16_t delay) {
     );
 }
 
-
+/* Recieve byte from RX */
 int8_t serial_recv(serial_t *sp)
 {
   uint8_t result = 0;
@@ -167,11 +176,14 @@ int8_t serial_recv(serial_t *sp)
   return result;
 }
 
+/* Handle to receive byte by port. */
 int8_t serial_handle(serial_t *sp)
 {
   return serial_recv(sp);
 }
 
+
+/* Write array of bytes to serial port */
 void serial_write(serial_t *sp, uint8_t byte)
 {
   uint8_t save_SREG = SREG;
