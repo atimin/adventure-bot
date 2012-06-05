@@ -124,10 +124,6 @@ extern int8_t serial_read_bytes(serial_t *sp, uint8_t *buff, uint8_t size);
  * @return a number bytes. */
 extern int8_t serial_available(serial_t *sp);
 
-/* Flush port.
- * @param *sp a serial port. */
-extern void serial_flush(serial_t *sp);
-
 /* Get port's state. 
  * @param *sp a serial port. 
  * @return a byte of state */

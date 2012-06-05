@@ -64,7 +64,6 @@ serial_t* serial_create()
 /* Free serial port object. */
 void serial_destroy(serial_t *sp)
 {
-  free(sp->rx_buff);
   free(sp);
 }
 
@@ -289,7 +288,7 @@ int8_t serial_read_bytes(serial_t *sp, uint8_t *buff, uint8_t size)
       sp->rx_buff[i - size] = sp->rx_buff[i];
     }
   } else {
-    sp->state != SP_EMPTY;
+    sp->state |= SP_EMPTY;
   }
 
   return size;
@@ -299,12 +298,6 @@ int8_t serial_read_bytes(serial_t *sp, uint8_t *buff, uint8_t size)
 int8_t serial_available(serial_t *sp)
 {
   return sp->rx_index;
-}
-
-/* Flush port. */
-void serial_flush(serial_t *sp)
-{
-  sp->rx_index = 0;
 }
 
 /* Get port's state */
