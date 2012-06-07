@@ -171,10 +171,10 @@ int8_t serial_recv(serial_t *sp)
 {
   uint8_t result = 0;
 
+  tuned_delay(sp->delay_rxcenter);
+
   if (!rx_read(sp)) {
     uint8_t d = 0;
-
-    tuned_delay(sp->delay_rxcenter);
 
 #ifdef SERIAL_DEBUG
     debug_rx_write(sp, 1);
