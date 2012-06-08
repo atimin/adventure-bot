@@ -54,9 +54,9 @@ void init()
   /* Init map */
   map = malloc(sizeof(*map));
   map->ir1 = 0x0100;
-  map->ir2 = 0x0000;
-  map->ir3 = 0x0000;
-  map->ir4 = 0x0000;
+  map->ir2 = 0x0001;
+  map->ir3 = 0x1000;
+  map->ir4 = 0x0100;
 
   /* Turn on a intrrupt for timer2. Seek an end of ADU package.*/
   TIMSK2 |= _BV(TOIE2);  

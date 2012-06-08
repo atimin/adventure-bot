@@ -81,9 +81,16 @@ extern void mb_rtu_config(mb_rtu_t *mb, uint8_t uid, serial_t *sp)
   mb->sp = sp;
 }
 
-uint16_t mb_getw(uint8_t *data, uint8_t pos)
+uint16_t mb_getw(uint8_t *data)
 {
-  return ((uint16_t)data[pos] << 8) + data[pos+1];
+  return ((uint16_t)*data << 8) + *(data+1);
+}
+
+void mb_copy(uint16_t *dest, uint16_t *src, uint8_t size)
+{
+  for (int i = 0; i < size; i++) {
+    dest[i] = mb_getw((uint8_t*)(src + i));
+  }
 }
 
 /* Calculate crc16 by table approach */
@@ -105,9 +112,8 @@ uint16_t calc_crc16(uint8_t *data, uint8_t size)
 uint8_t check_crc16(uint8_t *adu, uint8_t size)
 {
   uint16_t crc16 = calc_crc16(adu, size - 2);
-  uint8_t *p = (uint8_t*)&crc16;
 
-  return mb_getw(adu, size -2) == crc16 ;
+  return mb_getw(adu + size -2) == crc16;
 }
 
 /* Read buffer of serial port and process request */
@@ -129,22 +135,22 @@ extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, uint8_t size)
       uint8_t error = 0;
       switch (func) {
         case READ_HOLDING_REGS: 
-          if (mb_getw(adu,2)  >= 0x7d) {
+          if (mb_getw(adu+2)  >= 0x7d) {
             error = ILLEGAL_DATA_VALUE;
             break;
           }
-          else if (mb_getw(adu,2) + mb_getw(adu,4) > size) {
+          else if (mb_getw(adu+2) + mb_getw(adu+4) > size/2) {
             error = ILLEGAL_DATA_ADDRESS;
             break;
           }
           else {
-            size_resp = 5 + mb_getw(adu, 4)*2;
+            size_resp = 5 + mb_getw(adu+4)*2;
             resp = calloc(size_resp, sizeof *resp);
             resp[0] = mb->uid;
             resp[1] = func;
-            resp[2] = mb_getw(adu, 4)*2;
-            /* FIXME: SWAP! */
-            memcpy(resp + 3, map + mb_getw(adu, 2), mb_getw(adu, 4)* sizeof(*map));
+            resp[2] = mb_getw(adu+4)*2;
+
+            mb_copy((uint16_t*)(resp + 3), map + mb_getw(adu+2), mb_getw(adu+4)* sizeof(*map));
           }
 
           break;  
