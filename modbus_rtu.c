@@ -62,10 +62,10 @@ enum errors_t {
   ILLEGAL_DATA_VALUE = 0x3
 };
 
-typedef struct _response_t {
+typedef struct _array8_t {
   uint8_t *data;
   uint8_t size;
-} response_t;
+} array8_t;
 
 /* Allocate memory for modbus object. */
 extern mb_rtu_t* mb_rtu_create()
@@ -119,16 +119,16 @@ uint16_t calc_crc16(uint8_t *data, uint8_t size)
 }
 
 /* Check crc in ADU */
-uint8_t check_crc16(uint8_t *adu, uint8_t size)
+uint8_t check_crc16(array8_t *ary)
 {
-  return calc_crc16(adu, size) == 0;
+  return calc_crc16(ary->data, ary->size) == 0;
 }
 
 /* Read holding registers */
-uint8_t read_holding_registers(uint8_t *adu, response_t *resp, uint16_t *map, size_t map_size)
+uint8_t read_holding_registers(array8_t *adu, array8_t *resp, uint16_t *map, size_t map_size)
 {
-  uint16_t addr = mb_getw(adu+2);
-  uint16_t num = mb_getw(adu+4);
+  uint16_t addr = mb_getw(adu->data+2);
+  uint16_t num = mb_getw(adu->data+4);
 
   if (addr  >= 0x7d) {
     return ILLEGAL_DATA_VALUE;
@@ -150,23 +150,23 @@ uint8_t read_holding_registers(uint8_t *adu, response_t *resp, uint16_t *map, si
 extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t map_size)
 {
   uint8_t updated = 0;
-  uint8_t adu_size = serial_available(mb->sp); 
-  uint8_t *adu;
-  if (adu_size > 0) {
+  array8_t adu = {0};
+  adu.size = serial_available(mb->sp); 
+  if (adu.size > 0) {
     /* Get buffer  */
-    adu = calloc(adu_size, sizeof(*adu));
-    serial_read_bytes(mb->sp, adu, adu_size);
+    adu.data = calloc(adu.size, sizeof(*adu.data));
+    serial_read_bytes(mb->sp, adu.data, adu.size);
     /* Check CRC and UID*/
-    if (check_crc16(adu, adu_size) && adu[0] == mb->uid) {
+    if (check_crc16(&adu) && adu.data[0] == mb->uid) {
       /* Get func */
-      response_t resp = {0};
-      uint8_t func = adu[1];
+      array8_t resp = {0};
+      uint8_t func = adu.data[1];
       uint8_t error = 0;
 
       /* Execute request */
       switch (func) {
         case READ_HOLDING_REGS: 
-          error = read_holding_registers(adu, &resp, map, map_size); 
+          error = read_holding_registers(&adu, &resp, map, map_size); 
           break;  
 
         default:
@@ -193,7 +193,7 @@ extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t map_size)
       serial_write_bytes(mb->sp, resp.data, resp.size);
 
       free(resp.data);
-      free(adu);
+      free(adu.data);
     } /* if crc and uid are valid */
   } /* id adu_size > 0 */
 
