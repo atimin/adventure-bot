@@ -16,12 +16,12 @@ static bot_map_t *map;
 
 ISR (TIMER2_OVF_vect)
 {
-  if (mb_rtu_proc(mb, (uint16_t*)map, sizeof(*map))) { /* Process a received ADU */
-  }
+  mb_rtu_proc(mb, (uint16_t*)map, sizeof(*map));
 
   TCCR2B = 0x00;        /* Stop timer2 */ 
 
   RESET(PORTB, LB_LED);
+
 }
 
 ISR (PCINT0_vect)
@@ -29,7 +29,7 @@ ISR (PCINT0_vect)
   serial_handle(sp);    /* Receive byte */
 
   TCNT2 = 0;            /* Reset a timeout for ADU package */
-  TCCR2B = 0x07;        /* Run timer2 */ 
+  TCCR2B = 0x05;        /* Run timer2 */ 
 }
 
 void init()

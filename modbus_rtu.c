@@ -7,7 +7,6 @@
 
 #include "modbus_rtu.h"
 #include "serial.h"
-#include <stdlib.h>
 #include <avr/pgmspace.h>
 
 static const PROGMEM uint8_t hi_tb[] =  {
@@ -56,11 +55,17 @@ enum funcs {
   WRITE_MULTIPLE_REGS = 0x10
 };
 
-enum errors {
+enum errors_t {
+  NONE_ERROR = 0x0,
   ILLEGAL_FUNCTION = 0x1,
   ILLEGAL_DATA_ADDRESS = 0x2,
   ILLEGAL_DATA_VALUE = 0x3
 };
+
+typedef struct _response_t {
+  uint8_t *data;
+  uint8_t size;
+} response_t;
 
 /* Allocate memory for modbus object. */
 extern mb_rtu_t* mb_rtu_create()
@@ -81,12 +86,17 @@ extern void mb_rtu_config(mb_rtu_t *mb, uint8_t uid, serial_t *sp)
   mb->sp = sp;
 }
 
-uint16_t mb_getw(uint8_t *data)
+inline uint16_t mb_getw(uint8_t *data)
 {
-  return ((uint16_t)*data << 8) + *(data+1);
+  uint16_t reg;
+  *((uint8_t*)&reg) = data[1];
+  *((uint8_t*)&reg + 1) = data[0];
+
+  return reg;
 }
 
-void mb_copy(uint16_t *dest, uint16_t *src, uint8_t size)
+/* Copy 16 bit regs from src to dest with swapping */
+void mb_copy(uint16_t *dest, uint16_t *src, size_t size)
 {
   for (int i = 0; i < size; i++) {
     dest[i] = mb_getw((uint8_t*)(src + i));
@@ -111,13 +121,33 @@ uint16_t calc_crc16(uint8_t *data, uint8_t size)
 /* Check crc in ADU */
 uint8_t check_crc16(uint8_t *adu, uint8_t size)
 {
-  uint16_t crc16 = calc_crc16(adu, size - 2);
+  return calc_crc16(adu, size) == 0;
+}
 
-  return mb_getw(adu + size -2) == crc16;
+/* Read holding registers */
+uint8_t read_holding_registers(uint8_t *adu, response_t *resp, uint16_t *map, size_t map_size)
+{
+  uint16_t addr = mb_getw(adu+2);
+  uint16_t num = mb_getw(adu+4);
+
+  if (addr  >= 0x7d) {
+    return ILLEGAL_DATA_VALUE;
+  }
+  else if (addr + num > map_size/2) {
+    return ILLEGAL_DATA_ADDRESS;
+  }
+  else {
+    resp->size = 5 + 2*num;
+    resp->data = calloc(resp->size, sizeof(*resp));
+    resp->data[2] = 2*num;
+
+    mb_copy((uint16_t*)(resp->data + 3), map + addr, num);
+  }
+  return NONE_ERROR;
 }
 
 /* Read buffer of serial port and process request */
-extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, uint8_t size)
+extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t map_size)
 {
   uint8_t updated = 0;
   uint8_t adu_size = serial_available(mb->sp); 
@@ -129,51 +159,40 @@ extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, uint8_t size)
     /* Check CRC and UID*/
     if (check_crc16(adu, adu_size) && adu[0] == mb->uid) {
       /* Get func */
-      uint8_t *resp;
-      uint8_t size_resp;
+      response_t resp = {0};
       uint8_t func = adu[1];
       uint8_t error = 0;
+
+      /* Execute request */
       switch (func) {
         case READ_HOLDING_REGS: 
-          if (mb_getw(adu+2)  >= 0x7d) {
-            error = ILLEGAL_DATA_VALUE;
-            break;
-          }
-          else if (mb_getw(adu+2) + mb_getw(adu+4) > size/2) {
-            error = ILLEGAL_DATA_ADDRESS;
-            break;
-          }
-          else {
-            size_resp = 5 + mb_getw(adu+4)*2;
-            resp = calloc(size_resp, sizeof *resp);
-            resp[0] = mb->uid;
-            resp[1] = func;
-            resp[2] = mb_getw(adu+4)*2;
-
-            mb_copy((uint16_t*)(resp + 3), map + mb_getw(adu+2), mb_getw(adu+4)* sizeof(*map));
-          }
-
+          error = read_holding_registers(adu, &resp, map, map_size); 
           break;  
 
         default:
           error = ILLEGAL_FUNCTION;
       }
 
+      /* Make ADU */
       if (error) {
-        size_resp = 5;
-        resp = calloc(size_resp, sizeof *resp);
-        resp[0] = mb->uid;
-        resp[1] = func | 0x80;
-        resp[2] = error;
+        resp.size = 5;
+        resp.data = calloc(resp.size, sizeof *resp.data);
+        resp.data[0] = mb->uid;
+        resp.data[1] = func | 0x80;
+        resp.data[2] = error;
+      } 
+      else {
+        resp.data[0] = mb->uid;
+        resp.data[1] = func;
       }
 
-      uint16_t crc16 = calc_crc16(resp, size_resp - 2);
-      resp[size_resp - 2] = (uint8_t)(crc16 >> 8);
-      resp[size_resp - 1] = (uint8_t)crc16;
+      uint16_t crc16 = calc_crc16(resp.data, resp.size - 2);
+      resp.data[resp.size - 2] = (uint8_t)(crc16 >> 8);
+      resp.data[resp.size - 1] = (uint8_t)crc16;
       
-      serial_write_bytes(mb->sp, resp, size_resp);
+      serial_write_bytes(mb->sp, resp.data, resp.size);
 
-      free(resp);
+      free(resp.data);
       free(adu);
     } /* if crc and uid are valid */
   } /* id adu_size > 0 */

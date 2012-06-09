@@ -7,6 +7,7 @@
 #ifndef MODBUS_RTU_H
 
 #include <inttypes.h>
+#include <stdlib.h>
 #include "serial.h"
 
 #define MODBUS_RTU_H
@@ -36,6 +37,6 @@ extern void mb_rtu_config(mb_rtu_t *mb, uint8_t uid, serial_t *sp);
  * @param *map  a map modbus registers
  * @param szie a map size
  * @return 1 - a map has been changed. */
-extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, uint8_t size);
+extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t size);
 
 #endif /* end of include guard: MODBUS_RTU_H */
