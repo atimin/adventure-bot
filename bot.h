@@ -13,11 +13,18 @@
 #define TX                PORTD3  
 #define RX                PORTB3  
 
+#define IR_LEFT           ADC4
+#define IR_RIGH           ADC5
+#define IR_TOP            ADC6
+#define IR_BOTTOM         ADC7
+
+#define IR_LED            PORTD2
+
 typedef struct _bot_map_t {
-    uint16_t ir1;
-    uint16_t ir2;
-    uint16_t ir3;
-    uint16_t ir4;
+    uint16_t ir_left;
+    uint16_t ir_right;
+    uint16_t ir_top;
+    uint16_t ir_bottom;
 } bot_map_t;
 
 #endif

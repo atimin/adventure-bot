@@ -36,7 +36,7 @@ ISR (PCINT0_vect)
 void init()
 {
   /* Init outputs for I/O ports */
-  DDRD = _BV(RF_LED) | _BV(TX);
+  DDRD = _BV(RF_LED) | _BV(TX) | _BV(IR_LED);
   DDRB = _BV(LF_LED) | _BV(LB_LED);
 
   /* Init interrupt for RX */
@@ -54,10 +54,6 @@ void init()
 
   /* Init map */
   map = malloc(sizeof(*map));
-  map->ir1 = 0x0100;
-  map->ir2 = 0x0001;
-  map->ir3 = 0x1000;
-  map->ir4 = 0x0100;
 
   /* Turn on a intrrupt for timer2. Seek an end of ADU package.*/
   TIMSK2 |= _BV(TOIE2);  
@@ -68,5 +64,7 @@ void init()
 int main()
 {
   init();
-  for(;;);
+  for(;;) {
+    measure_irs();
+  }
 } 
