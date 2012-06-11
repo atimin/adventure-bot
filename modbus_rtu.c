@@ -169,6 +169,34 @@ uint8_t write_single_register(array8_t *adu, array8_t *resp, uint16_t *map, size
   }
   return NONE_ERROR;
 }
+
+uint8_t write_multiple_register(array8_t *adu, array8_t *resp, uint16_t *map, size_t map_size)
+{
+  uint16_t addr = mb_getw(adu->data+2);
+  uint16_t num = mb_getw(adu->data+4);
+
+  if (addr  >= 0x7d) {
+    return ILLEGAL_DATA_VALUE;
+  }
+  else if (addr + num > map_size) {
+    return ILLEGAL_DATA_ADDRESS;
+  }
+  else {
+    resp->size = 8;
+    resp->data = calloc(resp->size, sizeof(*resp->data));
+    
+    /* Copy addr and val to response */
+    resp->data[2] = adu->data[2];
+    resp->data[3] = adu->data[3];
+    resp->data[4] = adu->data[4];
+    resp->data[5] = adu->data[5];
+    
+
+    mb_copy(map + addr, (uint16_t*)(adu->data + 7), num);
+  }
+  return NONE_ERROR;
+}
+
 /* Read buffer of serial port and process request */
 extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t map_size)
 {
@@ -193,6 +221,12 @@ extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t map_size)
           break;  
         case WRITE_SINGLE_REG:
           error = write_single_register(&adu, &resp, map, map_size);
+          if (!error) {
+            updated = 1;
+          }
+          break;
+        case WRITE_MULTIPLE_REGS:
+          error = write_multiple_register(&adu, &resp, map, map_size);
           if (!error) {
             updated = 1;
           }

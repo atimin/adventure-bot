@@ -230,7 +230,6 @@ void serial_write(serial_t *sp, uint8_t byte)
   tx_write(sp, 0);
   tuned_delay(sp->delay_tx + XMIT_START_ADJUSTMENT);
 
-
 #ifdef SERIAL_DEBUG
   debug_tx_write(sp, 1);
 #endif
