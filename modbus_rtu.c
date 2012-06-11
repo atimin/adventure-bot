@@ -63,8 +63,8 @@ enum errors_t {
 };
 
 typedef struct _array8_t {
-  uint8_t *data;
   uint8_t size;
+  uint8_t *data;
 } array8_t;
 
 /* Allocate memory for modbus object. */
@@ -88,7 +88,7 @@ extern void mb_rtu_config(mb_rtu_t *mb, uint8_t uid, serial_t *sp)
 
 inline uint16_t mb_getw(uint8_t *data)
 {
-  uint16_t reg;
+  int16_t reg;
   *((uint8_t*)&reg) = data[1];
   *((uint8_t*)&reg + 1) = data[0];
 
@@ -133,12 +133,12 @@ uint8_t read_holding_registers(array8_t *adu, array8_t *resp, uint16_t *map, siz
   if (addr  >= 0x7d) {
     return ILLEGAL_DATA_VALUE;
   }
-  else if (addr + num > map_size/2) {
+  else if (addr + num > map_size) {
     return ILLEGAL_DATA_ADDRESS;
   }
   else {
     resp->size = 5 + 2*num;
-    resp->data = calloc(resp->size, sizeof(*resp));
+    resp->data = calloc(resp->size, sizeof(*resp->data));
     resp->data[2] = 2*num;
 
     mb_copy((uint16_t*)(resp->data + 3), map + addr, num);
@@ -146,6 +146,29 @@ uint8_t read_holding_registers(array8_t *adu, array8_t *resp, uint16_t *map, siz
   return NONE_ERROR;
 }
 
+uint8_t write_single_register(array8_t *adu, array8_t *resp, uint16_t *map, size_t map_size)
+{
+  uint16_t addr = mb_getw(adu->data+2);
+  uint16_t val = mb_getw(adu->data+4);
+
+  if (addr >= map_size) {
+    return ILLEGAL_DATA_ADDRESS;
+  }
+  else {
+    resp->size = 8;
+    resp->data = calloc(resp->size, sizeof(*resp->data));
+    
+    /* Copy addr and val to response */
+    resp->data[2] = adu->data[2];
+    resp->data[3] = adu->data[3];
+    resp->data[4] = adu->data[4];
+    resp->data[5] = adu->data[5];
+    
+    /* Write reg to map */
+    *((uint16_t*)map + addr) = val;
+  }
+  return NONE_ERROR;
+}
 /* Read buffer of serial port and process request */
 extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t map_size)
 {
@@ -168,7 +191,12 @@ extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t map_size)
         case READ_HOLDING_REGS: 
           error = read_holding_registers(&adu, &resp, map, map_size); 
           break;  
-
+        case WRITE_SINGLE_REG:
+          error = write_single_register(&adu, &resp, map, map_size);
+          if (!error) {
+            updated = 1;
+          }
+          break;
         default:
           error = ILLEGAL_FUNCTION;
       }
@@ -188,7 +216,7 @@ extern uint8_t mb_rtu_proc(mb_rtu_t *mb, uint16_t *map, size_t map_size)
 
       uint16_t crc16 = calc_crc16(resp.data, resp.size - 2);
       resp.data[resp.size - 2] = (uint8_t)(crc16 >> 8);
-      resp.data[resp.size - 1] = (uint8_t)crc16;
+      resp.data[resp.size - 1] = (int8_t)crc16;
       
       serial_write_bytes(mb->sp, resp.data, resp.size);
 
