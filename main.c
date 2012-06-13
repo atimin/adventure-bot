@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include <util/delay_basic.h>
+#include <string.h>
 
 #define SLAVE_ID 1
 
@@ -33,11 +34,30 @@ ISR (PCINT0_vect)
   TCCR2B = 0x07;        /* Run timer2 */ 
 }
 
+void measure_irs(bot_map_t *map)
+{
+  uint16_t smp[4] = { 0x0, 0x0, 0x0, 0x0 }; 
+
+  for (uint8_t i = 0; i < 4; i++) {
+    ADMUX = (ADMUX & 0xf0) | (IR_LEFT + i);
+    SET(ADCSRA, ADSC);
+
+    while(ADCSRA & _BV(ADSC))
+      continue;
+
+    smp[i] = ADCL;
+    smp[i] += (uint16_t)ADCH << 8;
+  }
+
+  memcpy(map, smp, 4 * sizeof(*smp));
+}
+
 void init()
 {
   /* Init outputs for I/O ports */
   DDRD = _BV(RF_LED) | _BV(TX) | _BV(IR_LED);
   DDRB = _BV(LF_LED) | _BV(LB_LED);
+  SET(PORTD, IR_LED);
 
   /* Init interrupt for RX */
   SET(PCICR, PCIE0);
@@ -55,9 +75,13 @@ void init()
   /* Init map */
   map = malloc(sizeof(*map));
 
-  /* Turn on a intrrupt for timer2. Seek an end of ADU package.*/
+  /* Turn on a interrupt for timer2. Seek an end of ADU package.*/
   TIMSK2 |= _BV(TOIE2);  
-  
+
+  /* Init ADC Vref = Vcc, left align result off conversion */ 
+  ADMUX =  _BV(ADLAR) | _BV(REFS0);
+  ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
+
   sei();
 }
 
@@ -65,6 +89,6 @@ int main()
 {
   init();
   for(;;) {
-    measure_irs();
+    measure_irs(map);
   }
 } 

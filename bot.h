@@ -13,10 +13,10 @@
 #define TX                PORTD3  
 #define RX                PORTB3  
 
-#define IR_LEFT           ADC4
-#define IR_RIGH           ADC5
-#define IR_TOP            ADC6
-#define IR_BOTTOM         ADC7
+#define IR_LEFT           4
+#define IR_RIGH           5
+#define IR_TOP            6
+#define IR_BOTTOM         7
 
 #define IR_LED            PORTD2
 
