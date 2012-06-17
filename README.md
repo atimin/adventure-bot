@@ -1,13 +1,15 @@
-My robot is based on [Adventure Bot](http://www.youtube.com/watch?v=fDeCK8lloY4) with bluethooth module for connect with PC.
+My robot is based on [Adventure Bot](http://www.youtube.com/watch?v=fDeCK8lloY4) with bluetooth module for connect with PC.
+
+## Features
 
 ### Bluethooth module
 
-I have used two spear discrete pins (RX,TX) to connect with bluethooth module. For info
+I have used two spear discrete pins (RX,TX) to connect with bluetooth module. For info
 about the module see [here](http://www.pial.net/post/Using-the-HC-05-Bluetooth-RS232-Serial-module-for-cheap-wireless-communication-with-your-uController.aspx).
 
 ### ModBus 
 
-Bot supports ModBus-RTU protocol for access to peripheries on level of bluethooth. You can use only
+The bot supports ModBus-RTU protocol for access to peripheries on level of bluetooth. You can use only
 modbus function: 0x3, 0x6, 0x10.
 
 ####ModBus map
@@ -19,3 +21,47 @@ modbus function: 0x3, 0x6, 0x10.
 | 0x0002  | read    |   ir_top    | Raw ADC of top IR           |
 | 0x0003  | read    |   ir_bottom | Raw ADC of bottom IR        |
 
+### The Player driver
+
+You can use the bot with the [Player server](http://playerstage.sourceforge.net/) 
+
+Currently the robot provides interface:
+
+  1. *aio* for IRs
+
+## How to use
+
+You must have on your machine:
+  1. Arduino IDE
+  2. CMake
+  3. Player server
+  4. [libmodbus](http://www.libmodbus.org/)
+  5. Git
+
+Getting start:
+
+  ```sh
+    $ git clone https://github.com/flipback/adventure-bot
+    $ cd adventure-bot/
+    $ mkdir build
+    $ cd build/
+    $ cmake ..
+    $ make
+    $ make upload # Load frimware to bot
+    $ cd player-driver/
+    $ player bot.cfg  # Run the Player server
+  ```
+
+Now you can access to bot by player client libraries. For Ruby boys:
+
+  ```ruby
+    require 'ruby-player'
+
+    Player::Client "localhost" do |cl|
+      aio = cl.aio
+      
+      c.loop(0.1) do
+        puts aio.voltages.inspect
+      end
+    end
+    
