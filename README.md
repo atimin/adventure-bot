@@ -1,5 +1,9 @@
 My robot is based on [Adventure Bot](http://www.youtube.com/watch?v=fDeCK8lloY4) with bluetooth module for connect with PC.
 
+## About
+
+![](https://plus.google.com/photos/100647047226011286297/albums/5755784805055249585)
+
 ## Features
 
 ### Bluethooth module
