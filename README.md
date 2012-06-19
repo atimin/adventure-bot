@@ -2,7 +2,7 @@ My robot is based on [Adventure Bot](https://docs.google.com/file/d/0B__O096vyVY
 
 ## About
 
-![Robot]("https://lh5.googleusercontent.com/-3gIiLsbn1LA/T-CnyL-0LXI/AAAAAAAAAWI/wOgKotbTDMQ/s721/bot.png Robot")
+![Robot](https://lh5.googleusercontent.com/-3gIiLsbn1LA/T-CnyL-0LXI/AAAAAAAAAWI/wOgKotbTDMQ/s721/bot.png "Robot")
 
 ## Features
 
