@@ -70,10 +70,7 @@ void init()
   /* Turn on a interrupt for timer2. Seek an end of ADU package.*/
   TIMSK2 |= _BV(TOIE2);  
 
-  /* Init ADC Vref = Vcc, left align result off conversion */ 
-  ADMUX =  _BV(ADLAR) | _BV(REFS0);
-  ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
-
+  init_adc();
   init_pwm();
 
   sei();

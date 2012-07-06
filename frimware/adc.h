@@ -12,6 +12,7 @@
 #include <avr/io.h>
 #include <inttypes.h>
 
+extern void init_adc();
 extern uint16_t adc_convert(uint8_t channel);
 
 #endif
