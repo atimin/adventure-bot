@@ -3,6 +3,7 @@
 #include "serial.h"
 #include "modbus_rtu.h"
 #include "adc.h"
+#include "servo.h"
 
 #include <avr/io.h>
 #include <stdio.h>
@@ -22,9 +23,7 @@ ISR (TIMER2_OVF_vect)
 
   TCCR2B = 0x00;        /* Stop timer2 */ 
 
-
   RESET(PORTB, LB_LED);
-
 }
 
 ISR (PCINT0_vect)
@@ -46,7 +45,7 @@ void measure_irs(bot_map_t *map)
 void init()
 {
   /* Init outputs for I/O ports */
-  DDRD = _BV(RF_LED) | _BV(TX) | _BV(IR_LED);
+  DDRD = _BV(RF_LED) | _BV(TX) | _BV(IR_LED) | _BV(TILT_PIN) | _BV(PAN_PIN);
   DDRB = _BV(LF_LED) | _BV(LB_LED);
   SET(PORTD, IR_LED);
 
@@ -65,6 +64,8 @@ void init()
 
   /* Init map */
   map = malloc(sizeof(*map));
+  map->pan_angle = 90;
+  map->tilt_angle = 90;
 
   /* Turn on a interrupt for timer2. Seek an end of ADU package.*/
   TIMSK2 |= _BV(TOIE2);  
@@ -72,6 +73,8 @@ void init()
   /* Init ADC Vref = Vcc, left align result off conversion */ 
   ADMUX =  _BV(ADLAR) | _BV(REFS0);
   ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
+
+  init_pwm();
 
   sei();
 }
@@ -81,5 +84,7 @@ int main()
   init();
   for(;;) {
     measure_irs(map);
+    servo(&PAN, map->pan_angle);
+    servo(&TILT, map->tilt_angle);
   }
 } 

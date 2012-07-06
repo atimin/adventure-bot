@@ -24,6 +24,9 @@ modbus function: 0x3, 0x6, 0x10.
 | 0x0001  | read    |   ir_right  | Raw ADC of right IR         |
 | 0x0002  | read    |   ir_top    | Raw ADC of top IR           |
 | 0x0003  | read    |   ir_bottom | Raw ADC of bottom IR        |
+| 0x0004  | r\w     |   pan_angle | Angle of pan joint of head  |
+| 0x0005  | r\w     |   tilt_angle| Angle of tilt joint of head |
+
 
 ### The Player driver
 

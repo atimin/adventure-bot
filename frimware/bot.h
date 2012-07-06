@@ -18,6 +18,13 @@
 #define IR_TOP            6
 #define IR_BOTTOM         7
 
+
+#define PAN_PIN         PORTD5
+#define TILT_PIN        PORTD6
+
+#define PAN             OCR0A
+#define TILT            OCR0B
+
 #define IR_LED            PORTD2
 
 typedef struct _bot_map_t {
@@ -25,6 +32,8 @@ typedef struct _bot_map_t {
     uint16_t ir_right;
     uint16_t ir_top;
     uint16_t ir_bottom;
+    uint16_t pan_angle;
+    uint16_t tilt_angle;
 } bot_map_t;
 
 #endif
