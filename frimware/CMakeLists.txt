@@ -4,8 +4,8 @@
 
 INCLUDE (./avr.cmake)
 
-SET(MAIN_FILE ./main.c ./serial.c ./modbus_rtu.c)
-SET(HDRS ./bot.h ./serial.h ./modbus_rtu.h)                                # Firmware headers 
+SET(MAIN_FILE ./main.c ./serial.c ./modbus_rtu.c ./adc.c)
+SET(HDRS ./bot.h ./serial.h ./modbus_rtu.h ./adc.h)                                # Firmware headers 
 
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${MAIN_FILE})

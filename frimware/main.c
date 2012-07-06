@@ -2,6 +2,7 @@
 
 #include "serial.h"
 #include "modbus_rtu.h"
+#include "adc.h"
 
 #include <avr/io.h>
 #include <stdio.h>
@@ -36,20 +37,10 @@ ISR (PCINT0_vect)
 
 void measure_irs(bot_map_t *map)
 {
-  uint16_t smp[4] = { 0x0, 0x0, 0x0, 0x0 }; 
-
-  for (uint8_t i = 0; i < 4; i++) {
-    ADMUX = (ADMUX & 0xf0) | (IR_LEFT + i);
-    SET(ADCSRA, ADSC);
-
-    while(ADCSRA & _BV(ADSC))
-      continue;
-
-    smp[i] = ADCL;
-    smp[i] += (uint16_t)ADCH << 8;
-  }
-
-  memcpy(map, smp, 4 * sizeof(*smp));
+  map->ir_left = adc_convert(IR_LEFT);
+  map->ir_right = adc_convert(IR_RIGHT);
+  map->ir_top = adc_convert(IR_TOP);
+  map->ir_bottom = adc_convert(IR_BOTTOM);
 }
 
 void init()
