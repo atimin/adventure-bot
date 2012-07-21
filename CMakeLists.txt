@@ -6,4 +6,5 @@ PROJECT(bot)
 
 ADD_SUBDIRECTORY(player-driver)
 ADD_SUBDIRECTORY(frimware)
+ADD_SUBDIRECTORY(brain)
 

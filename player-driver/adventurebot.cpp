@@ -4,7 +4,7 @@
  *
  * Public Domain
  * */
-
+#include <math.h>
 #include <libplayercore/playercore.h>
 #include <modbus/modbus.h>
 #include <sstream>
@@ -12,9 +12,11 @@
 class BotDriver : public ThreadedDriver {
 public:
   BotDriver(ConfigFile* cf, int section)
-      : ThreadedDriver(cf, section, false, PLAYER_MSGQUEUE_DEFAULT_MAXLEN,
-          PLAYER_AIO_CODE)
+      : ThreadedDriver(cf, section, false, PLAYER_MSGQUEUE_DEFAULT_MAXLEN)
   {
+    this->AddInterface(&this->aio_addr, cf, section, PLAYER_AIO_CODE);
+    this->AddInterface(&this->actarray_addr, cf, section, PLAYER_ACTARRAY_CODE);
+
     this->port = (char*)cf->ReadFilename(section, "port", NULL);
     this->baud = cf->ReadInt(section, "baud", 9600);
     this->uid = cf->ReadInt(section, "uid", 1);
@@ -22,7 +24,8 @@ public:
 
   ~BotDriver() 
   {
-    free(this->ctx);
+    modbus_close(this->ctx);
+    modbus_free(this->ctx);
   }
 
 private:
@@ -31,6 +34,10 @@ private:
   int baud;
   int uid;
 
+
+  player_devaddr_t  aio_addr;
+  player_devaddr_t  actarray_addr;
+
   virtual int ProcessMessage(QueuePointer &resp_queue, 
                                 player_msghdr* hdr,
                                 void* data)
@@ -38,11 +45,36 @@ private:
     // Process messages here.  Send a response if necessary, using Publish().
     // If you handle the message successfully, return 0.  Otherwise,
     // return -1, and a NACK will be sent for you, if a response is required.
-    printf("Got message type=%d and subtype=%d", hdr->type, hdr->subtype);
+    printf("Got message for interf=%d type=%d and subtype=%d", 
+        hdr->addr.interf, hdr->type, hdr->subtype);
+
+    switch (hdr->type) {
+      case PLAYER_MSGTYPE_CMD:
+        switch(hdr->subtype) {
+          case PLAYER_ACTARRAY_CMD_POS:
+            player_actarray_position_cmd *cmd = (player_actarray_position_cmd*)data;
+            int degs = (int)round(cmd->position * 57.29);
+            int joint = cmd->joint;
+
+            printf("Pos joint=%d on %d degres\n", joint, degs);
+            int rc = modbus_write_register(ctx, 4 + joint, degs);
+            if (rc == -1) {
+              fprintf(stderr, "%s\n", modbus_strerror(errno));
+              return -1;
+            }
+
+            break;
+
+        }
+        break;
+
+      default:
+        printf("Message has not been process\n");
+    }
     return(0);
   }
 
-  void Simulate()
+  void Proc()
   {
     uint16_t irs_raw[4];
     int rc, i;
@@ -61,7 +93,7 @@ private:
       data->voltages[i] = ((float)irs_raw[i]) / 0xffff * 5;
     }
 
-    Publish(this->device_addr, PLAYER_MSGTYPE_DATA, PLAYER_AIO_DATA_STATE, 
+    Publish(this->aio_addr, PLAYER_MSGTYPE_DATA, PLAYER_AIO_DATA_STATE, 
         (void*)data, sizeof(uint32_t) + 4 * sizeof(float));
 
     delete [] data->voltages;
@@ -86,9 +118,10 @@ private:
   {
     for(;;) {
       pthread_testcancel();
-      ProcessMessages();
-      Simulate();
-
+      this->Proc();
+      if (!InQueue->Empty()) {
+         this->ProcessMessages();
+      }
       usleep(100000);
     }
   }

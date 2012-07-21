@@ -59,6 +59,9 @@ void init()
   serial_debug(sp, &PORTD, RF_LED, &PORTB, LF_LED);
 
   /* Init modbus slave */
+  /* Init ADC Vref = Vcc, left align result off conversion */ 
+  ADMUX =  _BV(ADLAR) | _BV(REFS0);
+  ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
   mb = mb_rtu_create();
   mb_rtu_config(mb, SLAVE_ID, sp);
 
