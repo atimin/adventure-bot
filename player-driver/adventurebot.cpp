@@ -45,7 +45,7 @@ private:
     // Process messages here.  Send a response if necessary, using Publish().
     // If you handle the message successfully, return 0.  Otherwise,
     // return -1, and a NACK will be sent for you, if a response is required.
-    printf("Got message for interf=%d type=%d and subtype=%d", 
+    printf("Got message for interf=%d type=%d and subtype=%d\n", 
         hdr->addr.interf, hdr->type, hdr->subtype);
 
     switch (hdr->type) {
@@ -119,10 +119,8 @@ private:
     for(;;) {
       pthread_testcancel();
       this->Proc();
-      if (!InQueue->Empty()) {
-         this->ProcessMessages();
-      }
-      usleep(100000);
+      this->ProcessMessages(0);
+      usleep(10000);
     }
   }
 

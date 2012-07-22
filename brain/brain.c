@@ -57,26 +57,52 @@ void bot_update(BOT *bot)
   playerc_client_read(bot->client);
 }
 
-void bot_turn_head(BOT* bot, float rads, int axis)
+void bot_turn_head(BOT *bot, float rads, int axis)
 {
   playerc_actarray_position_cmd(bot->head, axis, rads);
 }
 
 
+#define POINTS     7 
+#define OFFSET_DEG 10
+#define BASE_DEG   60
+
+
 int main(int argc, const char *argv[])
 {
-  int i;
+  int i,j;
   BOT *bot = bot_create("localhost", 6665, 0, 0);
+  int deg_i, deg_j;
 
   if (!bot_connect(bot)) {
-    for (i = 0; i < 10; i++) {
-      bot_update(bot);
-      bot_turn_head(bot,PAN, M_PI/2);
+
+    for (i = 0; i < POINTS; i++) {
+      for (j = 0; j < POINTS; j++) {
+        bot_update(bot);
+        deg_i = (BASE_DEG + OFFSET_DEG*i);
+        deg_j = (BASE_DEG + OFFSET_DEG*j);
+        bot_turn_head(bot, deg_i/57.32, PAN);
+        bot_turn_head(bot, deg_j/57.32, TITL);
+        printf("[%d,%d],[%.2f, %.2f, %.2f, %.2f]\n", deg_i, deg_j, 
+            bot->irs->voltages[0],
+            bot->irs->voltages[1],
+            bot->irs->voltages[2],
+            bot->irs->voltages[3]
+        );
+      }
+
+      
+
       sleep(1);
     }
+
+    bot_turn_head(bot, M_PI/2, TITL);
+    bot_turn_head(bot, M_PI/2, PAN);
+
+    sleep(1);
   }
   else
-    printf("Something wrong\n");
+    fprintf(stderr, "Something wrong\n");
 
 
   bot_disconnect(bot);
